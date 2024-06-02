@@ -1,6 +1,6 @@
 package com.hogwarts.imagess3.services;
 
-import com.hogwarts.imagess3.exceptions.ImageUploadException;
+import com.hogwarts.imagess3.exceptions.subjects.image.ImageUploadException;
 import com.hogwarts.imagess3.repositories.employee.JWTEmployeeRepository;
 import com.hogwarts.imagess3.repositories.s3.AvatarRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,11 +19,11 @@ public class AvatarService {
 
     public void deleteUserAvatar(String jwt) {
         Long id = jwtRepository.getUserIdByJwt(jwt);
-        avatarRepository.deleteAvatarById(id);
+        avatarRepository.deleteSubject(id);
     }
 
     public String findUserAvatar(Long id) {
-        return avatarRepository.getAvatarById(id);
+        return avatarRepository.getSubject(id);
     }
 
     public void updateUserAvatar(String jwt, MultipartFile imageFile) {
@@ -39,7 +39,7 @@ public class AvatarService {
                 throw new ImageUploadException("Image must be 120x120 pixels.");
             }
 
-            avatarRepository.updateAvatarById(id, imageFile.getBytes());
+            avatarRepository.updateSubject(id, imageFile.getBytes());
         } catch (IOException e) {
             throw new ImageUploadException("Image read failed.");
         }

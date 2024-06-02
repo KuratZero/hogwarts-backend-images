@@ -1,8 +1,6 @@
 package com.hogwarts.imagess3.repositories.s3;
 
-import com.hogwarts.imagess3.exceptions.NoSuchImage;
-import jakarta.annotation.PreDestroy;
-import lombok.Getter;
+import com.hogwarts.imagess3.exceptions.NoSuchSubject;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
@@ -12,27 +10,27 @@ import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequ
 
 import java.time.Duration;
 
-@Getter
-abstract public class AbstractS3Repository {
+public abstract class AbstractS3Repository<T> {
     private final S3Client client;
     private final S3Presigner presigner;
     private final String bucketName;
+    private final String subjectName;
 
     public AbstractS3Repository(S3Client client,
                                 S3Presigner presigner,
-                                String bucketName) {
+                                String bucketName,
+                                String subjectName) {
         this.client = client;
         this.presigner = presigner;
         this.bucketName = bucketName;
+        this.subjectName = subjectName;
     }
 
-    @PreDestroy
-    public void closeAll() {
-        client.close();
-        presigner.close();
-    }
+    protected abstract String toToken(T rawToken);
 
-    public Boolean imageIsPresent(String token) {
+    public Boolean subjectIsPresent(T rawToken) {
+        String token = toToken(rawToken);
+
         try {
             client.headObject(
                     HeadObjectRequest.builder()
@@ -43,19 +41,24 @@ abstract public class AbstractS3Repository {
         return true;
     }
 
-    public void deleteImage(String token) throws NoSuchImage {
-        if (!imageIsPresent(token)) {
-            throw new NoSuchImage("Image is not present.");
+    public void deleteSubject(T rawToken) throws NoSuchSubject {
+        String token = toToken(rawToken);
+
+        if (!subjectIsPresent(rawToken)) {
+            throw new NoSuchSubject(subjectName, "Not present.");
         }
+
         client.deleteObject(
                 DeleteObjectRequest.builder()
                         .bucket(bucketName).key(token).build());
     }
 
-    public void updateImage(String token, byte[] newImage) {
+    public void updateSubject(T rawToken, byte[] newImage) {
+        String token = toToken(rawToken);
+
         try {
-            deleteImage(token);
-        } catch (NoSuchImage ignored) {
+            deleteSubject(rawToken);
+        } catch (NoSuchSubject ignored) {
         }
 
         client.putObject(
@@ -64,9 +67,10 @@ abstract public class AbstractS3Repository {
                 RequestBody.fromBytes(newImage));
     }
 
-    public String getImage(String token) throws NoSuchImage {
-        if (!imageIsPresent(token)) {
-            throw new NoSuchImage("Not found this image.");
+    public String getSubject(T rawToken) throws NoSuchSubject {
+        String token = toToken(rawToken);
+        if (!subjectIsPresent(rawToken)) {
+            throw new NoSuchSubject(subjectName, "Not present.");
         }
 
         GetObjectRequest getObjectRequest =

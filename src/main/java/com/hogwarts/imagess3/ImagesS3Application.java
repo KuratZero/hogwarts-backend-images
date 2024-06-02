@@ -4,10 +4,10 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class Imagess3Application {
+public class ImagesS3Application {
 
     public static void main(String[] args) {
-        SpringApplication.run(Imagess3Application.class, args);
+        SpringApplication.run(ImagesS3Application.class, args);
     }
 
 }
